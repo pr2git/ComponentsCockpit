@@ -56,7 +56,8 @@ class COCPager(Pager):
 
     def buildEntry(self, currentPage, pageCount):
         bubble = (self.picDotPage and self.showIcons == "showAll" and self.orientation == eListbox.orHorizontal
-                  and self.currentPageStyle == "bubbletext" and 0 < self.maxPages < pageCount)
+                  and getattr(self, "current_page_style", getattr(self, "currentPageStyle", None)) == "bubbletext"
+                  and 0 < getattr(self, "max_pages", getattr(self, "maxPages", 0)) < pageCount)
         if not bubble:
             return Pager.buildEntry(self, currentPage, pageCount)
         width = self.l.getItemSize().width()
@@ -65,20 +66,34 @@ class COCPager(Pager):
         pixdHeight = self.picDotPage.size().height()
         text = f"{currentPage + 1} / {pageCount + 1}"
         textWidth = self._calcTextWidth(text, font=self.font, size=eSize(self.getDesktopWith() // 3, 0))
-        bubbleWidth = textWidth + self.bubbletextPadding * 2
+        _padding = getattr(self, "bubbletextPadding", getattr(self, "bubbletext_padding", 4))
+        bubbleWidth = textWidth + _padding * 2
         xBubble = (width - bubbleWidth) // 2
         res = [None]
         if currentPage > 0 and self.picShevronLeft:
             res.append(MultiContentEntryPixmapAlphaBlend(
                 pos=(xBubble - self.spacing - pixdWidth, 0), size=(pixdWidth, pixdHeight), png=self.picShevronLeft,
                 backcolor=None, backcolor_sel=None, flags=BT_ALIGN_CENTER))
-        res.append(MultiContentEntryText(
-            pos=(xBubble, 0), size=(bubbleWidth, height), font=0, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER, text=" ",
-            cornerRadius=self.bubbletextCornerRadius, backcolor=self.bubbletextBkColor, backcolor_sel=self.bubbletextBkColor))
-        res.append(MultiContentEntryText(
-            pos=(xBubble + self.bubbletextPadding - 1, 0), size=(textWidth + 2, height), font=0,
-            flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER | RT_BLEND, text=text, color=self.foreColor, color_sel=self.foreColor,
-            textBWidth=1, textBColor=0x010101))
+        _bubble_bg = getattr(self, "bubbletextBkColor", getattr(self, "bubbletextBackgroundColor", getattr(self, "bubbletext_background_color", None)))
+        _corner_radius = getattr(self, "bubbletextCornerRadius", getattr(self, "bubbletext_corner_radius", 0))
+        try:
+            res.append(MultiContentEntryText(
+                pos=(xBubble, 0), size=(bubbleWidth, height), font=0, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER, text=" ",
+                cornerRadius=_corner_radius, backcolor=_bubble_bg, backcolor_sel=_bubble_bg))
+        except TypeError:
+            res.append(MultiContentEntryText(
+                pos=(xBubble, 0), size=(bubbleWidth, height), font=0, flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER, text=" ",
+                backcolor=_bubble_bg, backcolor_sel=_bubble_bg))
+        _fore_color = getattr(self, "foreColor", getattr(self, "foregroundColor", getattr(self, "fore_color", None)))
+        try:
+            res.append(MultiContentEntryText(
+                pos=(xBubble + _padding - 1, 0), size=(textWidth + 2, height), font=0,
+                flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER | RT_BLEND, text=text, color=_fore_color, color_sel=_fore_color,
+                textBWidth=1, textBColor=0x010101))
+        except TypeError:
+            res.append(MultiContentEntryText(
+                pos=(xBubble + _padding - 1, 0), size=(textWidth + 2, height), font=0,
+                flags=RT_HALIGN_CENTER | RT_VALIGN_CENTER | RT_BLEND, text=text, color=_fore_color, color_sel=_fore_color))
         if currentPage < pageCount and self.picShevronRight:
             res.append(MultiContentEntryPixmapAlphaBlend(
                 pos=(xBubble + bubbleWidth + self.spacing, 0), size=(pixdWidth, pixdHeight), png=self.picShevronRight,

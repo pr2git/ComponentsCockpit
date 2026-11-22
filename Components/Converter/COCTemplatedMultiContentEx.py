@@ -48,8 +48,12 @@ class COCTemplatedMultiContentEx(TemplatedMultiContent):
             MultiContentEntryPixmapAlphaBlendScaled = MultiContentEntryPixmapAlphaBlend
             MultiContentEntryPixmapAlphaTestScaled = MultiContentEntryPixmapAlphaTest
 
-        from Components.MultiContent import (  # noqa: F401  pylint: disable=possibly-unused-variable
-            MultiContentEntryLinearGradient, MultiContentEntryLinearGradientAlphaBlend)
+        try:
+            from Components.MultiContent import (  # noqa: F401  pylint: disable=possibly-unused-variable
+                MultiContentEntryLinearGradient, MultiContentEntryLinearGradientAlphaBlend)
+        except ImportError:
+            MultiContentEntryLinearGradient = None  # noqa: F841  pylint: disable=possibly-unused-variable
+            MultiContentEntryLinearGradientAlphaBlend = None  # noqa: F841  pylint: disable=possibly-unused-variable
 
         from skin import parseFont, getSkinFactor  # noqa: F401  pylint: disable=possibly-unused-variable
 
@@ -69,9 +73,9 @@ class COCTemplatedMultiContentEx(TemplatedMultiContent):
         self.template = eval(args, {}, loc)  # pylint: disable=eval-used
         self.scale = None
         self.orientations = {
-            "orHorizontal": eListbox.orHorizontal,
-            "orVertical": eListbox.orVertical,
-            "orGrid": eListbox.orGrid,
+            "orHorizontal": getattr(eListbox, "orHorizontal", 0),
+            "orVertical": getattr(eListbox, "orVertical", 1),
+            "orGrid": getattr(eListbox, "orGrid", getattr(eListbox, "orVertical", 1)),
         }
         assert "fonts" in self.template
         assert "itemHeight" in self.template
